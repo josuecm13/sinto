@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
+model User {
+  id               String         @id @default(cuid())
+  email            String         @unique
+  name             String
+  username         String?        @unique
+  avatarUrl        String?
+  passwordHash     String?
+  isPublic         Boolean        @default(false)
+  remindersEnabled Boolean        @default(false)
+  reminderTime     String?        // HH:MM format
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  cycles           Cycle[]
+  notifications    Notification[]
+  devices          Device[]
+}
+
+model Cycle {
+  id                String     @id @default(cuid())
+  userId            String
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate         DateTime   @db.Date
+  endDate           DateTime?  @db.Date
+  cycleLength       Int?
+  lutealPhaseLength Int?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  logs              DailyLog[]
+}
+
+model DailyLog {
+  id             String        @id @default(cuid())
+  cycleId        String
+  cycle          Cycle         @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  date           DateTime      @db.Date
+  temperature    Float?
+  phase          Phase?
+  isMenstruating Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  menstrualLog   MenstrualLog?
+  symptomLog     SymptomLog?
+
+  @@unique([cycleId, date])
+  @@index([cycleId])
+}
+
+model MenstrualLog {
+  id          String          @id @default(cuid())
+  dailyLogId  String          @unique
+  dailyLog    DailyLog        @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  flowLevel   FlowLevel
+  color       FlowColor
+  consistency FlowConsistency
+}
+
+model SymptomLog {
+  id           String       @id @default(cuid())
+  dailyLogId   String       @unique
+  dailyLog     DailyLog     @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  mood         Mood?
+  mucusType    MucusType?
+  mucusQuality MucusQuality?
+  symptoms     Symptom[]
+}
+
+model PhaseContent {
+  id       String          @id @default(cuid())
+  phase    Phase
+  category ContentCategory
+  title    String
+  body     String
+  locale   String          @default("es")
+
+  @@unique([phase, category, title, locale])
+  @@index([phase, locale])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  scheduledAt DateTime
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, scheduledAt])
+}
+
+model Device {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Phase {
+  MENSTRUAL
+  FOLLICULAR
+  OVULATORY
+  LUTEAL
+}
+
+enum FlowLevel {
+  SPOTTING
+  LIGHT
+  MEDIUM
+  HEAVY
+}
+
+enum FlowColor {
+  BRIGHT_RED
+  DARK_RED
+  PINK
+  BROWN
+  BLACK
+}
+
+enum FlowConsistency {
+  WATERY
+  NORMAL
+  CLOTTY
+}
+
+enum Mood {
+  HAPPY
+  CALM
+  ANXIOUS
+  IRRITABLE
+  SAD
+  ENERGETIC
+  TIRED
+}
+
+enum MucusType {
+  DRY
+  STICKY
+  CREAMY
+  EGG_WHITE
+  WATERY
+}
+
+enum MucusQuality {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  PEAK
+}
+
+enum Symptom {
+  NAUSEA
+  BREAST_PAIN
+  HEADACHE
+  CRAMPS
+  BLOATING
+  BACKACHE
+  FATIGUE
+  ACNE
+  INSOMNIA
+}
+
+enum ContentCategory {
+  EXERCISE
+  NUTRITION
+  TIPS
+  DANGERS
+  GENERAL
+}
