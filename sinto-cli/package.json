@@ -1,0 +1,20 @@
+{
+  "name": "sinto-cli",
+  "version": "0.1.0",
+  "description": "CLI client for Sinto App",
+  "bin": { "sinto": "dist/index.js" },
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
