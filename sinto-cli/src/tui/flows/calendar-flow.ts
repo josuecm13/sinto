@@ -22,13 +22,23 @@ interface Log {
 }
 
 interface Prediction {
-  dailyProbability: { date: string; isFertile: boolean }[]
+  currentPhase: { name: string }
+  fertilityWindow: {
+    estimatedStartDate: string
+    estimatedEndDate: string
+    isCurrentlyFertile: boolean
+  }
+  expectedOvulation: { estimatedDate: string }
+  nextExpectedMenstruation: string
 }
 
 interface Cycle {
   id: string
   startDate: string
   endDate: string | null
+}
+
+interface LogsResponse {
   logs: Log[]
 }
 
@@ -40,33 +50,80 @@ export async function calendarFlow() {
   spinner.start('Cargando ciclo...')
 
   try {
-    const [cycle, prediction] = await Promise.all([
+    const [cycle, logsResponse, prediction] = await Promise.all([
       apiGet<Cycle>(`/cycles/${cycleId}`, creds.accessToken),
+      apiGet<LogsResponse>(`/cycles/${cycleId}/logs`, creds.accessToken),
       apiGet<Prediction>(`/cycles/${cycleId}/prediction`, creds.accessToken).catch(() => null),
     ])
     spinner.stop('')
 
-    // Build fertile set
-    const fertileSet = new Set<string>()
+    // Build fertility window date range from prediction
+    let fertileStart: string | null = null
+    let fertileEnd: string | null = null
     if (prediction) {
-      for (const d of prediction.dailyProbability) {
-        if (d.isFertile) fertileSet.add(d.date)
+      fertileStart = prediction.fertilityWindow.estimatedStartDate.slice(0, 10)
+      fertileEnd = prediction.fertilityWindow.estimatedEndDate.slice(0, 10)
+    }
+
+    const inFertileWindow = (date: string) =>
+      !!fertileStart && !!fertileEnd && date >= fertileStart && date <= fertileEnd
+
+    // Build CalendarDay array from actual logs
+    const loggedDates = new Set<string>()
+    const calDays: CalendarDay[] = logsResponse.logs.map((log) => {
+      const date = log.date.slice(0, 10)
+      loggedDates.add(date)
+      return {
+        date,
+        phase: log.phase ?? undefined,
+        isMenstruating: log.isMenstruating,
+        temperature: log.temperature,
+        isFertile: inFertileWindow(date),
+        hasLog: true,
+      }
+    })
+
+    // Add predicted days for unlocked dates (cycle start → next expected menstruation)
+    if (prediction) {
+      const cycleStart = cycle.startDate.slice(0, 10)
+      const cycleEnd = prediction.nextExpectedMenstruation.slice(0, 10)
+      const cursor = new Date(cycleStart)
+      const endDate = new Date(cycleEnd)
+      const cycleStartDate = new Date(cycleStart)
+
+      while (cursor <= endDate) {
+        const dateStr = cursor.toISOString().slice(0, 10)
+        if (!loggedDates.has(dateStr)) {
+          // Estimate phase based on position relative to cycle start and fertility window
+          const dayOfCycle = Math.floor((cursor.getTime() - cycleStartDate.getTime()) / 86400000) + 1
+          let phase: string
+          if (dayOfCycle <= 5) {
+            phase = 'MENSTRUAL'
+          } else if (fertileStart && dateStr < fertileStart) {
+            phase = 'FOLLICULAR'
+          } else if (fertileStart && fertileEnd && dateStr >= fertileStart && dateStr <= fertileEnd) {
+            phase = 'OVULATORY'
+          } else {
+            phase = 'LUTEAL'
+          }
+
+          calDays.push({
+            date: dateStr,
+            phase,
+            isFertile: inFertileWindow(dateStr),
+            isPredicted: true,
+            hasLog: false,
+          })
+        }
+        cursor.setDate(cursor.getDate() + 1)
       }
     }
 
-    // Build CalendarDay array
-    const calDays: CalendarDay[] = cycle.logs.map((log) => ({
-      date: log.date.slice(0, 10),
-      phase: log.phase ?? undefined,
-      isMenstruating: log.isMenstruating,
-      temperature: log.temperature,
-      isFertile: fertileSet.has(log.date.slice(0, 10)),
-      hasLog: true,
-    }))
-
     // Determine which months to show
     const start = new Date(cycle.startDate)
-    const end = cycle.endDate ? new Date(cycle.endDate) : new Date()
+    const end = prediction
+      ? new Date(prediction.nextExpectedMenstruation)
+      : cycle.endDate ? new Date(cycle.endDate) : new Date()
 
     let year = start.getFullYear()
     let month = start.getMonth()

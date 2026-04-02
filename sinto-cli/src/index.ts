@@ -84,7 +84,7 @@ program.addCommand(phaseCommand)
 program.addCommand(predictCommand)
 
 const args = process.argv.slice(2)
-const isHelp = args.length === 0 || args[0] === '--help' || args[0] === '-h'
+const isHelp = args[0] === '--help' || args[0] === '-h'
 const isVersion = args[0] === '--version' || args[0] === '-v'
 
 if (isVersion) {
