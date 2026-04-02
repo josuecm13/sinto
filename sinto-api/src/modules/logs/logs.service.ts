@@ -9,6 +9,7 @@
 import { prisma } from '../../shared/utils/prisma'
 import { AppError } from '../../shared/errors/AppError'
 import type { CreateLogInput, UpdateLogInput } from './logs.schema'
+import { computeAndSaveCycleStatistics } from '../cycles/cycles.service'
 
 export async function createLog(userId: string, cycleId: string, input: CreateLogInput) {
   // Verify cycle belongs to user
@@ -99,7 +100,48 @@ export async function createLog(userId: string, cycleId: string, input: CreateLo
     return completeLog
   })
 
-  return log
+  // Auto cycle transition: if menstruating and log is > 5 days past cycle start,
+  // close the current cycle and open a new one
+  let cycleTransitioned = false
+  let newCycleId: string | undefined
+
+  if (input.isMenstruating && log) {
+    const fiveDaysAfterStart = new Date(cycle.startDate)
+    fiveDaysAfterStart.setDate(fiveDaysAfterStart.getDate() + 5)
+
+    if (logDate > fiveDaysAfterStart) {
+      const endDate = new Date(logDate)
+      endDate.setDate(endDate.getDate() - 1)
+      const cycleLength = Math.round(
+        (endDate.getTime() - cycle.startDate.getTime()) / (1000 * 60 * 60 * 24),
+      )
+
+      await prisma.$transaction(async (tx) => {
+        // Close the old cycle
+        await tx.cycle.update({
+          where: { id: cycleId },
+          data: { endDate, cycleLength },
+        })
+
+        // Create new cycle
+        const newCycle = await tx.cycle.create({
+          data: { userId, startDate: logDate },
+        })
+        newCycleId = newCycle.id
+
+        // Move the log to the new cycle
+        await tx.dailyLog.update({
+          where: { id: log.id },
+          data: { cycleId: newCycle.id },
+        })
+      })
+
+      cycleTransitioned = true
+      await computeAndSaveCycleStatistics(userId)
+    }
+  }
+
+  return { ...log, cycleTransitioned, newCycleId }
 }
 
 export async function listLogs(userId: string, cycleId: string) {
