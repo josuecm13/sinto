@@ -78,15 +78,22 @@ cycleCommand
 cycleCommand
   .command('start')
   .description('Start a new cycle')
-  .action(async () => {
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD, default today)')
+  .action(async (options) => {
     try {
       const creds = requireAuth()
 
-      const startDate = await p.text({
-        message: 'Start date? (YYYY-MM-DD)',
-        placeholder: today(),
-        defaultValue: today(),
-      })
+      const startDate = options.startDate
+        ? String(options.startDate)
+        : await p.text({
+            message: 'Start date? (YYYY-MM-DD)',
+            placeholder: today(),
+            defaultValue: today(),
+          })
+
+      if (options.startDate) {
+        p.intro(`Starting cycle with date ${options.startDate}...`)
+      }
 
       const spinner = p.spinner()
       spinner.start('Creating cycle...')
@@ -96,8 +103,7 @@ cycleCommand
       setActiveCycle(cycle.id)
 
       spinner.stop('Cycle started!')
-      console.log(`\n  Cycle started! (ID: ${cycle.id})`)
-      console.log(`  Set as active cycle.\n`)
+      p.outro(`Cycle started! (ID: ${cycle.id}) Set as active cycle.`)
     } catch (err) {
       handleError(err, 'creating cycle')
     }
@@ -122,9 +128,9 @@ cycleCommand
       section(`Cycle ${cycle.id}`)
       row('Start date', formatDate(cycle.startDate))
       row('End date', formatDate(cycle.endDate))
-      row('Cycle length', `${cycle.cycleLength} days`)
-      row('Luteal phase length', `${cycle.lutealPhaseLength} days`)
-      row('Logs', `${cycle.logsCount}`)
+      row('Cycle length', cycle.cycleLength ? `${cycle.cycleLength} days` : '—')
+      row('Luteal phase length', cycle.lutealPhaseLength ? `${cycle.lutealPhaseLength} days` : '—')
+      row('Logs', cycle.logs ? `${cycle.logs.length}` : '—')
 
       if (cycle.logs && cycle.logs.length > 0) {
         console.log(`  ${pc.dim('─'.repeat(40))}`)
@@ -147,16 +153,23 @@ cycleCommand
 cycleCommand
   .command('close [cycleId]')
   .description('Close a cycle')
-  .action(async (cycleId?: string) => {
+  .option('--end-date <date>', 'End date (YYYY-MM-DD, default today)')
+  .action(async (cycleId?: string, options?: any) => {
     try {
       const creds = requireAuth()
       const id = getActiveCycleId(creds, cycleId)
 
-      const endDate = await p.text({
-        message: 'End date? (YYYY-MM-DD)',
-        placeholder: today(),
-        defaultValue: today(),
-      })
+      const endDate = options?.endDate
+        ? String(options.endDate)
+        : await p.text({
+            message: 'End date? (YYYY-MM-DD)',
+            placeholder: today(),
+            defaultValue: today(),
+          })
+
+      if (options?.endDate) {
+        p.intro(`Closing cycle ${id} with date ${options.endDate}...`)
+      }
 
       const spinner = p.spinner()
       spinner.start('Closing cycle...')
@@ -164,7 +177,7 @@ cycleCommand
       await apiPatch<Cycle>(`/cycles/${id}`, { endDate }, creds.accessToken)
 
       spinner.stop('Done!')
-      console.log(`\n  Cycle closed.\n`)
+      p.outro('Cycle closed.')
     } catch (err) {
       handleError(err, 'closing cycle')
     }
@@ -187,15 +200,22 @@ cycleCommand
 cycleCommand
   .command('delete <cycleId>')
   .description('Delete a cycle')
-  .action(async (cycleId: string) => {
+  .option('--force', 'Skip confirmation prompt')
+  .action(async (cycleId: string, options) => {
     try {
-      const confirmed = await p.confirm({
-        message: 'Delete this cycle and all its logs?',
-      })
+      let confirmed = options.force
 
       if (!confirmed) {
-        p.cancel('Cancelled.')
-        return
+        confirmed = await p.confirm({
+          message: 'Delete this cycle and all its logs?',
+        })
+
+        if (!confirmed) {
+          p.cancel('Cancelled.')
+          return
+        }
+      } else {
+        p.intro(`Deleting cycle ${cycleId}...`)
       }
 
       const spinner = p.spinner()
@@ -204,7 +224,7 @@ cycleCommand
       await apiDelete(`/cycles/${cycleId}`, requireAuth().accessToken)
 
       spinner.stop('Done!')
-      console.log(`\n  Cycle deleted.\n`)
+      p.outro('Cycle deleted.')
     } catch (err) {
       handleError(err, 'deleting cycle')
     }

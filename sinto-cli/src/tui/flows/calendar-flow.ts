@@ -22,14 +22,16 @@ interface Log {
 }
 
 interface Prediction {
-  currentPhase: { name: string }
-  fertilityWindow: {
-    estimatedStartDate: string
-    estimatedEndDate: string
+  cycleId: string
+  fertileWindow: {
+    fertileStart: string | null
+    fertileEnd: string | null
+    ovulationEstimate: string | null
+  }
+  summary: {
+    estimatedOvulation: string
     isCurrentlyFertile: boolean
   }
-  expectedOvulation: { estimatedDate: string }
-  nextExpectedMenstruation: string
 }
 
 interface Cycle {
@@ -38,9 +40,7 @@ interface Cycle {
   endDate: string | null
 }
 
-interface LogsResponse {
-  logs: Log[]
-}
+type LogsResponse = Log[]
 
 export async function calendarFlow() {
   const creds = requireAuth()
@@ -60,9 +60,9 @@ export async function calendarFlow() {
     // Build fertility window date range from prediction
     let fertileStart: string | null = null
     let fertileEnd: string | null = null
-    if (prediction) {
-      fertileStart = prediction.fertilityWindow.estimatedStartDate.slice(0, 10)
-      fertileEnd = prediction.fertilityWindow.estimatedEndDate.slice(0, 10)
+    if (prediction && prediction.fertileWindow.fertileStart && prediction.fertileWindow.fertileEnd) {
+      fertileStart = prediction.fertileWindow.fertileStart.slice(0, 10)
+      fertileEnd = prediction.fertileWindow.fertileEnd.slice(0, 10)
     }
 
     const inFertileWindow = (date: string) =>
@@ -70,7 +70,7 @@ export async function calendarFlow() {
 
     // Build CalendarDay array from actual logs
     const loggedDates = new Set<string>()
-    const calDays: CalendarDay[] = logsResponse.logs.map((log) => {
+    const calDays: CalendarDay[] = logsResponse.map((log) => {
       const date = log.date.slice(0, 10)
       loggedDates.add(date)
       return {
@@ -83,12 +83,16 @@ export async function calendarFlow() {
       }
     })
 
-    // Add predicted days for unlocked dates (cycle start → next expected menstruation)
+    // Add predicted days for unlocked dates (cycle start → estimated cycle end)
+    let estimatedCycleEnd: string = ''
     if (prediction) {
       const cycleStart = cycle.startDate.slice(0, 10)
-      const cycleEnd = prediction.nextExpectedMenstruation.slice(0, 10)
+      // Estimate cycle end: cycle start + 28 days (default cycle length)
+      const estimatedEnd = new Date(cycleStart)
+      estimatedEnd.setDate(estimatedEnd.getDate() + 28)
+      estimatedCycleEnd = estimatedEnd.toISOString().slice(0, 10)
       const cursor = new Date(cycleStart)
-      const endDate = new Date(cycleEnd)
+      const endDate = new Date(estimatedCycleEnd)
       const cycleStartDate = new Date(cycleStart)
 
       while (cursor <= endDate) {
@@ -121,8 +125,8 @@ export async function calendarFlow() {
 
     // Determine which months to show
     const start = new Date(cycle.startDate)
-    const end = prediction
-      ? new Date(prediction.nextExpectedMenstruation)
+    const end = estimatedCycleEnd
+      ? new Date(estimatedCycleEnd)
       : cycle.endDate ? new Date(cycle.endDate) : new Date()
 
     let year = start.getFullYear()
