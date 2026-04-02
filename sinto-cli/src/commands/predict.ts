@@ -22,7 +22,7 @@ interface FertileWindow {
 
 interface DailyProbability {
   date: string
-  day: number
+  cycleDay: number
   isFertile: boolean
   probability: number
 }
@@ -78,7 +78,7 @@ const predictCommand = new Command('predict')
 
       prediction.dailyProbability.slice(0, 10).forEach((dayProb) => {
         const dateStr = formatDate(dayProb.date).padEnd(12)
-        const dayStr = dayProb.day.toString().padEnd(6)
+        const dayStr = dayProb.cycleDay.toString().padEnd(6)
         const fertileStr = dayProb.isFertile ? pc.red('yes') : pc.dim('no')
         const barStr = probabilityBar(dayProb.probability, 15)
 

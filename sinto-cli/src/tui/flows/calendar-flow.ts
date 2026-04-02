@@ -22,15 +22,25 @@ interface Log {
 }
 
 interface Prediction {
-  dailyProbability: { date: string; isFertile: boolean }[]
+  cycleId: string
+  fertileWindow: {
+    fertileStart: string | null
+    fertileEnd: string | null
+    ovulationEstimate: string | null
+  }
+  summary: {
+    estimatedOvulation: string
+    isCurrentlyFertile: boolean
+  }
 }
 
 interface Cycle {
   id: string
   startDate: string
   endDate: string | null
-  logs: Log[]
 }
+
+type LogsResponse = Log[]
 
 export async function calendarFlow() {
   const creds = requireAuth()
@@ -40,33 +50,84 @@ export async function calendarFlow() {
   spinner.start('Cargando ciclo...')
 
   try {
-    const [cycle, prediction] = await Promise.all([
+    const [cycle, logsResponse, prediction] = await Promise.all([
       apiGet<Cycle>(`/cycles/${cycleId}`, creds.accessToken),
+      apiGet<LogsResponse>(`/cycles/${cycleId}/logs`, creds.accessToken),
       apiGet<Prediction>(`/cycles/${cycleId}/prediction`, creds.accessToken).catch(() => null),
     ])
     spinner.stop('')
 
-    // Build fertile set
-    const fertileSet = new Set<string>()
+    // Build fertility window date range from prediction
+    let fertileStart: string | null = null
+    let fertileEnd: string | null = null
+    if (prediction && prediction.fertileWindow.fertileStart && prediction.fertileWindow.fertileEnd) {
+      fertileStart = prediction.fertileWindow.fertileStart.slice(0, 10)
+      fertileEnd = prediction.fertileWindow.fertileEnd.slice(0, 10)
+    }
+
+    const inFertileWindow = (date: string) =>
+      !!fertileStart && !!fertileEnd && date >= fertileStart && date <= fertileEnd
+
+    // Build CalendarDay array from actual logs
+    const loggedDates = new Set<string>()
+    const calDays: CalendarDay[] = logsResponse.map((log) => {
+      const date = log.date.slice(0, 10)
+      loggedDates.add(date)
+      return {
+        date,
+        phase: log.phase ?? undefined,
+        isMenstruating: log.isMenstruating,
+        temperature: log.temperature,
+        isFertile: inFertileWindow(date),
+        hasLog: true,
+      }
+    })
+
+    // Add predicted days for unlocked dates (cycle start → estimated cycle end)
+    let estimatedCycleEnd: string = ''
     if (prediction) {
-      for (const d of prediction.dailyProbability) {
-        if (d.isFertile) fertileSet.add(d.date)
+      const cycleStart = cycle.startDate.slice(0, 10)
+      // Estimate cycle end: cycle start + 28 days (default cycle length)
+      const estimatedEnd = new Date(cycleStart)
+      estimatedEnd.setDate(estimatedEnd.getDate() + 28)
+      estimatedCycleEnd = estimatedEnd.toISOString().slice(0, 10)
+      const cursor = new Date(cycleStart)
+      const endDate = new Date(estimatedCycleEnd)
+      const cycleStartDate = new Date(cycleStart)
+
+      while (cursor <= endDate) {
+        const dateStr = cursor.toISOString().slice(0, 10)
+        if (!loggedDates.has(dateStr)) {
+          // Estimate phase based on position relative to cycle start and fertility window
+          const dayOfCycle = Math.floor((cursor.getTime() - cycleStartDate.getTime()) / 86400000) + 1
+          let phase: string
+          if (dayOfCycle <= 5) {
+            phase = 'MENSTRUAL'
+          } else if (fertileStart && dateStr < fertileStart) {
+            phase = 'FOLLICULAR'
+          } else if (fertileStart && fertileEnd && dateStr >= fertileStart && dateStr <= fertileEnd) {
+            phase = 'OVULATORY'
+          } else {
+            phase = 'LUTEAL'
+          }
+
+          calDays.push({
+            date: dateStr,
+            phase,
+            isFertile: inFertileWindow(dateStr),
+            isPredicted: true,
+            hasLog: false,
+          })
+        }
+        cursor.setDate(cursor.getDate() + 1)
       }
     }
 
-    // Build CalendarDay array
-    const calDays: CalendarDay[] = cycle.logs.map((log) => ({
-      date: log.date.slice(0, 10),
-      phase: log.phase ?? undefined,
-      isMenstruating: log.isMenstruating,
-      temperature: log.temperature,
-      isFertile: fertileSet.has(log.date.slice(0, 10)),
-      hasLog: true,
-    }))
-
     // Determine which months to show
     const start = new Date(cycle.startDate)
-    const end = cycle.endDate ? new Date(cycle.endDate) : new Date()
+    const end = estimatedCycleEnd
+      ? new Date(estimatedCycleEnd)
+      : cycle.endDate ? new Date(cycle.endDate) : new Date()
 
     let year = start.getFullYear()
     let month = start.getMonth()

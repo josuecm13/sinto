@@ -63,9 +63,11 @@ export async function apiPatch<T>(path: string, body: unknown, token?: string): 
 }
 
 export async function apiDelete(path: string, token?: string): Promise<void> {
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
+    headers,
   })
   if (!res.ok) {
     const data = (await res.json()) as Record<string, unknown>

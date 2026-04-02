@@ -41,11 +41,61 @@ const logCommand = new Command('log').description('Log daily symptoms')
 logCommand
   .command('add')
   .option('--cycle <id>', 'Cycle ID (defaults to active cycle)')
-  .action(async (options: { cycle?: string }) => {
+  .option('--date <YYYY-MM-DD>', 'Log date (default: today)')
+  .option('--temperature <number>', 'BBT temperature (35.0–42.0)')
+  .option('--menstruating', 'Log menstruation (use --no-menstruating for non-menstruating)')
+  .option('--flow-level <level>', 'SPOTTING|LIGHT|MEDIUM|HEAVY')
+  .option('--color <color>', 'BRIGHT_RED|DARK_RED|PINK|BROWN|BLACK')
+  .option('--consistency <c>', 'WATERY|NORMAL|CLOTTY')
+  .option('--mood <mood>', 'HAPPY|CALM|ANXIOUS|IRRITABLE|SAD|ENERGETIC|TIRED')
+  .option('--mucus-type <type>', 'DRY|STICKY|CREAMY|EGG_WHITE|WATERY')
+  .option('--mucus-quality <quality>', 'NONE|LOW|MEDIUM|HIGH|PEAK')
+  .option('--symptoms <list>', 'Comma-separated: NAUSEA,BREAST_PAIN,HEADACHE,CRAMPS,BLOATING,BACKACHE,FATIGUE,ACNE,INSOMNIA')
+  .action(async (options: any) => {
     try {
       const creds = requireAuth()
       const cycleId = getActiveCycleId(creds, options.cycle)
 
+      // Check for non-interactive mode: --date triggers it; --menstruating defaults to false
+      if (options.date) {
+        // Non-interactive path
+        p.intro('Adding log')
+
+        const date = options.date ?? today()
+        const temperature = options.temperature ? parseFloat(options.temperature) : undefined
+        const isMenstruating = options.menstruating === true
+
+        const body: any = { date, isMenstruating }
+        if (temperature) body.temperature = temperature
+
+        if (isMenstruating) {
+          if (options.flowLevel) {
+            body.menstrualLog = {
+              flowLevel: options.flowLevel,
+              color: options.color ?? 'BRIGHT_RED',
+              consistency: options.consistency ?? 'NORMAL',
+            }
+          }
+        } else {
+          const symptomLog: any = {}
+          if (options.mood) symptomLog.mood = options.mood
+          if (options.mucusType) symptomLog.mucusType = options.mucusType
+          if (options.mucusQuality) symptomLog.mucusQuality = options.mucusQuality
+          if (options.symptoms) symptomLog.symptoms = options.symptoms.split(',').map((s: string) => s.trim())
+          if (Object.keys(symptomLog).length > 0) body.symptomLog = symptomLog
+        }
+
+        const spinner = p.spinner()
+        spinner.start('Saving log...')
+
+        await apiPost(`/cycles/${cycleId}/logs`, body, creds.accessToken)
+
+        spinner.stop('Done!')
+        p.outro(`Log saved for ${date}`)
+        return
+      }
+
+      // Interactive path (unchanged)
       const fields = await p.group(
         {
           date: () =>

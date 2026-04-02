@@ -15,6 +15,7 @@ export interface CalendarDay {
   isFertile?: boolean
   isToday?: boolean
   hasLog?: boolean
+  isPredicted?: boolean
 }
 
 const PHASE_COLOR: Record<string, (s: string) => string> = {
@@ -33,26 +34,25 @@ const MONTH_NAMES = [
 
 function daySymbol(day: CalendarDay | undefined, dayNum: number): string {
   const num = String(dayNum).padStart(2, ' ')
+  const trimmed = String(dayNum).padStart(2, '0')
 
-  if (!day) return pc.dim(`  ${num} `)
+  if (!day) return pc.dim(`    `)
 
   const colorFn = day.phase ? PHASE_COLOR[day.phase] : (s: string) => s
 
-  let cell = `  ${num} `
-
   if (day.isToday) {
-    cell = pc.bold(pc.bgWhite(pc.black(` ${num} `))) + ' '
+    return pc.bold(pc.bgWhite(pc.black(` ${num} `)))
   } else if (day.isMenstruating) {
-    cell = colorFn(pc.bold(` 🔴 `)) + ' '
-  } else if (day.isFertile) {
-    cell = pc.green(pc.bold(` ◈${num.trim()} `)) + ' '
+    return colorFn(pc.bold(`●${trimmed} `))
+  } else if (day.isFertile && day.hasLog) {
+    return pc.green(pc.bold(`◆${trimmed} `))
   } else if (day.hasLog) {
-    cell = colorFn(`  ${num} `)
+    return colorFn(` ${num} `)
+  } else if (day.isPredicted) {
+    return pc.dim(colorFn(`·${trimmed} `))
   } else {
-    cell = pc.dim(`  ${num} `)
+    return pc.dim(` ${num} `)
   }
-
-  return cell
 }
 
 export function renderCalendar(
@@ -81,7 +81,7 @@ export function renderCalendar(
 
   // Blank padding before first day
   for (let i = 0; i < startOffset; i++) {
-    row += '    '
+    row += pc.dim('    ')
     col++
   }
 
@@ -105,7 +105,9 @@ export function renderCalendar(
   if (col > 0) console.log(row)
   console.log()
 
-  // Legend
-  console.log(`  ${pc.red('🔴')} menstruando  ${pc.green('◈')} fértil  ${pc.bgWhite(pc.black(' hoy '))}  ${pc.dim('· sin registro')}`)
+  // Legend — symbols
+  console.log(`  ${pc.red('●')} menstruando  ${pc.green('◆')} fértil  ${pc.bgWhite(pc.black(' hoy '))}  ${pc.dim('· estimado')}`)
+  // Legend — phases
+  console.log(`  ${pc.red('▪ Menstrual')}  ${pc.yellow('▪ Folicular')}  ${pc.green('▪ Ovulatoria')}  ${pc.magenta('▪ Lútea')}`)
   console.log()
 }

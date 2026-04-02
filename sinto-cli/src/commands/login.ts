@@ -20,9 +20,43 @@ interface LoginResponse {
 
 export const loginCommand = new Command('login')
   .description('Log in to your Sinto account')
-  .action(async () => {
+  .option('--email <email>', 'Email address')
+  .option('--password <password>', 'Password')
+  .action(async (options) => {
     p.intro('Log in to Sinto')
 
+    // Non-interactive path: if both email and password are provided
+    if (options.email && options.password) {
+      const spinner = p.spinner()
+      spinner.start('Logging in...')
+
+      try {
+        const res = await apiPost<LoginResponse>('/auth/login', {
+          email: options.email,
+          password: options.password,
+        })
+
+        saveCredentials({
+          email: res.user.email,
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
+        })
+
+        spinner.stop('Logged in!')
+        p.outro(`Welcome back, ${res.user.name}!`)
+        return
+      } catch (err) {
+        spinner.stop('Failed.')
+        if (err instanceof ApiError) {
+          p.cancel(err.status === 401 ? 'Invalid email or password.' : `${err.message} (${err.code})`)
+        } else {
+          p.cancel('Could not reach the API. Is the server running?')
+        }
+        process.exit(1)
+      }
+    }
+
+    // Interactive path: fall through to existing prompt flow
     const fields = await p.group(
       {
         email: () =>
