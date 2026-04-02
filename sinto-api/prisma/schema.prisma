@@ -9,20 +9,21 @@ datasource db {
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
-  id               String         @id @default(cuid())
-  email            String         @unique
+  id               String           @id @default(cuid())
+  email            String           @unique
   name             String
-  username         String?        @unique
+  username         String?          @unique
   avatarUrl        String?
   passwordHash     String?
-  isPublic         Boolean        @default(false)
-  remindersEnabled Boolean        @default(false)
-  reminderTime     String?        // HH:MM format
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  isPublic         Boolean          @default(false)
+  remindersEnabled Boolean          @default(false)
+  reminderTime     String?          // HH:MM format
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   cycles           Cycle[]
   notifications    Notification[]
   devices          Device[]
+  cycleStatistics  CycleStatistics?
 }
 
 model Cycle {
@@ -107,6 +108,18 @@ model Device {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model CycleStatistics {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avgDurationDays Float
+  minDurationDays Int
+  maxDurationDays Int
+  stdDev          Float
+  cycleCount      Int
+  lastUpdated     DateTime @updatedAt
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────

@@ -1,32 +1,61 @@
 /**
  * MODULE: Algorithm service
- * Fetches cycle logs and runs the symptothermal algorithm. Verifies cycle ownership.
+ * Fetches cycle logs, historical statistics, and runs the full symptothermal prediction.
+ * Verifies cycle ownership.
  *
  * Exports: getCyclePrediction
- * Depends on: prisma, fertile-window, pregnancy-probability
+ * Depends on: prisma, fertile-window, phases.service
  */
 
 import { prisma } from '../../shared/utils/prisma'
 import { AppError } from '../../shared/errors/AppError'
-import type { DayData, FertileWindow } from './fertile-window'
-import { calculateFertileWindow } from './fertile-window'
-import { calculateDailyProbabilities, type DailyProbability } from './pregnancy-probability'
+import type { DayData, FertileWindow, TempTrend } from './fertile-window'
+import { calculateFertileWindow, analyzeTempTrend } from './fertile-window'
+import { getCurrentPhase } from '../phases/phases.service'
+
+// Phase day-range boundaries (mirrors getCurrentPhase logic)
+const PHASE_RANGES: Record<string, { start: number; end: number }> = {
+  MENSTRUAL:  { start: 1,  end: 5  },
+  FOLLICULAR: { start: 6,  end: 13 },
+  OVULATORY:  { start: 14, end: 16 },
+  LUTEAL:     { start: 17, end: 999 },
+}
+
+export interface DurationVariance {
+  min: number
+  max: number
+  stdDev: number
+}
 
 export interface CyclePredictionResult {
   cycleId: string
-  cycleStart: Date
-  fertileWindow: FertileWindow
-  dailyProbability: DailyProbability[]
-  summary: {
-    estimatedOvulation: Date | null
-    currentDayProbability: number
+  cycleDay: number
+  estimatedCycleDuration: number
+  durationVariance: DurationVariance | null
+  currentPhase: {
+    name: string
+    estimatedStartDay: number
+    estimatedEndDay: number
+    dayInPhase: number
+  }
+  expectedOvulation: {
+    estimatedDate: Date | null
+    daysUntil: number | null
+  }
+  fertilityWindow: {
+    estimatedStartDate: Date | null
+    estimatedEndDate: Date | null
+    daysRemaining: number | null
     isCurrentlyFertile: boolean
   }
+  temperatureTrend: TempTrend
+  nextExpectedMenstruation: Date
+  confidenceLevel: 'low' | 'medium' | 'high'
 }
 
 /**
- * Fetches cycle with all DailyLogs + SymptomLogs and calculates prediction.
- * Verifies ownership (throws 404 if not owned).
+ * Full symptothermal prediction for a cycle.
+ * Incorporates historical cycle statistics, BBT trend, mucus data, and phase information.
  */
 export async function getCyclePrediction(
   userId: string,
@@ -37,17 +66,12 @@ export async function getCyclePrediction(
     where: { id: cycleId },
     include: {
       logs: {
-        include: {
-          symptomLog: true,
-        },
-        orderBy: {
-          date: 'asc',
-        },
+        include: { symptomLog: true },
+        orderBy: { date: 'asc' },
       },
     },
   })
 
-  // Check if cycle exists and is owned by user
   if (!cycle || cycle.userId !== userId) {
     throw new AppError('Cycle not found', 404, 'CYCLE_NOT_FOUND')
   }
@@ -59,34 +83,91 @@ export async function getCyclePrediction(
     mucusQuality: log.symptomLog?.mucusQuality ?? null,
   }))
 
-  // Calculate fertile window
-  const fertileWindow = calculateFertileWindow(daysData, cycle.startDate)
+  // Get cycle day and phase from phases service
+  const { phase, cycleDay } = await getCurrentPhase(userId, cycleId)
+  const phaseRange = PHASE_RANGES[phase]
 
-  // Calculate daily probabilities
-  const dailyProbability = calculateDailyProbabilities(daysData, cycle.startDate, fertileWindow)
+  // Fetch historical statistics
+  const stats = await prisma.cycleStatistics.findUnique({ where: { userId } })
+  const estimatedCycleDuration = stats ? Math.round(stats.avgDurationDays) : 28
+  const durationVariance: DurationVariance | null = stats
+    ? { min: stats.minDurationDays, max: stats.maxDurationDays, stdDev: stats.stdDev }
+    : null
 
-  // Get today's probability and fertile status
+  // Calculate fertile window from symptothermal signals
+  const fertileWindow: FertileWindow = calculateFertileWindow(daysData, cycle.startDate)
+
+  // Temperature trend
+  const temperatureTrend = analyzeTempTrend(daysData, fertileWindow.bbtRiseDay)
+
+  // Expected ovulation: use signal if available, else fall back to estimated duration - 14
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const todayProbability = dailyProbability.find((p) => {
-    const pDate = new Date(p.date)
-    pDate.setHours(0, 0, 0, 0)
-    return pDate.getTime() === today.getTime()
-  })
+  let ovulationDate: Date | null = fertileWindow.ovulationEstimate
+  if (!ovulationDate) {
+    ovulationDate = new Date(cycle.startDate)
+    ovulationDate.setDate(ovulationDate.getDate() + (estimatedCycleDuration - 14))
+  }
 
-  const currentDayProbability = todayProbability?.probability ?? 0
-  const isCurrentlyFertile = todayProbability?.isFertile ?? false
+  const daysUntilOvulation = ovulationDate
+    ? Math.round((ovulationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    : null
+
+  // Fertility window
+  const isCurrentlyFertile =
+    fertileWindow.fertileStart !== null &&
+    fertileWindow.fertileEnd !== null &&
+    today >= fertileWindow.fertileStart &&
+    today <= fertileWindow.fertileEnd
+
+  let daysRemaining: number | null = null
+  if (fertileWindow.fertileEnd !== null) {
+    daysRemaining = Math.max(
+      0,
+      Math.round((fertileWindow.fertileEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
+    )
+  }
+
+  // Next expected menstruation
+  const nextExpectedMenstruation = new Date(cycle.startDate)
+  nextExpectedMenstruation.setDate(nextExpectedMenstruation.getDate() + estimatedCycleDuration)
+
+  // Confidence level
+  const hasTempData = temperatureTrend.hasData
+  const cycleCount = stats?.cycleCount ?? 0
+  let confidenceLevel: 'low' | 'medium' | 'high'
+  if (cycleCount >= 5 && hasTempData) {
+    confidenceLevel = 'high'
+  } else if (cycleCount >= 2 || hasTempData) {
+    confidenceLevel = 'medium'
+  } else {
+    confidenceLevel = 'low'
+  }
 
   return {
     cycleId,
-    cycleStart: cycle.startDate,
-    fertileWindow,
-    dailyProbability,
-    summary: {
-      estimatedOvulation: fertileWindow.ovulationEstimate,
-      currentDayProbability,
+    cycleDay,
+    estimatedCycleDuration,
+    durationVariance,
+    currentPhase: {
+      name: phase.toLowerCase(),
+      estimatedStartDay: phaseRange.start,
+      estimatedEndDay: phaseRange.end === 999 ? estimatedCycleDuration : phaseRange.end,
+      dayInPhase: cycleDay - phaseRange.start + 1,
+    },
+    expectedOvulation: {
+      estimatedDate: ovulationDate,
+      daysUntil: daysUntilOvulation,
+    },
+    fertilityWindow: {
+      estimatedStartDate: fertileWindow.fertileStart,
+      estimatedEndDate: fertileWindow.fertileEnd,
+      daysRemaining,
       isCurrentlyFertile,
     },
+    temperatureTrend,
+    nextExpectedMenstruation,
+    confidenceLevel,
   }
 }

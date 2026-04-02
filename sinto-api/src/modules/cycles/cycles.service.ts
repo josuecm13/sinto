@@ -127,7 +127,43 @@ export async function updateCycle(userId: string, cycleId: string, input: Update
     data: updateData,
   })
 
+  if (input.endDate !== undefined) {
+    await computeAndSaveCycleStatistics(userId)
+  }
+
   return updated
+}
+
+export async function computeAndSaveCycleStatistics(userId: string): Promise<void> {
+  const completedCycles = await prisma.cycle.findMany({
+    where: {
+      userId,
+      endDate: { not: null },
+    },
+    orderBy: { startDate: 'desc' },
+    take: 6,
+  })
+
+  if (completedCycles.length < 2) return
+
+  const durations = completedCycles.map((c) => {
+    if (c.cycleLength !== null) return c.cycleLength
+    const end = c.endDate as Date
+    return Math.round((end.getTime() - c.startDate.getTime()) / (1000 * 60 * 60 * 24))
+  })
+
+  const cycleCount = durations.length
+  const avgDurationDays = durations.reduce((sum, d) => sum + d, 0) / cycleCount
+  const minDurationDays = Math.min(...durations)
+  const maxDurationDays = Math.max(...durations)
+  const variance = durations.reduce((sum, d) => sum + Math.pow(d - avgDurationDays, 2), 0) / cycleCount
+  const stdDev = Math.sqrt(variance)
+
+  await prisma.cycleStatistics.upsert({
+    where: { userId },
+    create: { userId, avgDurationDays, minDurationDays, maxDurationDays, stdDev, cycleCount },
+    update: { avgDurationDays, minDurationDays, maxDurationDays, stdDev, cycleCount },
+  })
 }
 
 export async function deleteCycle(userId: string, cycleId: string) {

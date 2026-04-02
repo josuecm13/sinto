@@ -99,6 +99,67 @@ export function detectPeakMucus(days: DayData[]): Date | null {
   return null
 }
 
+export interface TempTrend {
+  hasData: boolean
+  lastTemperature: number | null
+  trend: 'rising' | 'stable' | 'falling' | 'post-shift' | null
+  daysUntilThermalShift: number | null
+}
+
+/**
+ * Analyzes the temperature trend from recent logged days.
+ *
+ * - If bbtRiseDay is set → post-shift confirmed
+ * - If < 3 temperature readings → hasData: false
+ * - Otherwise compare last temp to mean of prior 3 temps:
+ *   diff > +0.1 → rising, diff < -0.1 → falling, else → stable
+ * - daysUntilThermalShift estimated when trend is rising based on
+ *   how many consecutive elevated days have already been observed (need 3)
+ */
+export function analyzeTempTrend(days: DayData[], bbtRiseDay: Date | null): TempTrend {
+  const tempsWithDates = days
+    .filter((d) => d.temperature !== null)
+    .map((d) => ({ date: d.date, temp: d.temperature as number }))
+
+  const lastTemperature = tempsWithDates.length > 0
+    ? tempsWithDates[tempsWithDates.length - 1].temp
+    : null
+
+  if (bbtRiseDay !== null) {
+    return { hasData: true, lastTemperature, trend: 'post-shift', daysUntilThermalShift: null }
+  }
+
+  if (tempsWithDates.length < 3) {
+    return { hasData: tempsWithDates.length > 0, lastTemperature, trend: null, daysUntilThermalShift: null }
+  }
+
+  const recent = tempsWithDates.slice(-4)
+  const last = recent[recent.length - 1].temp
+  const prior = recent.slice(0, -1)
+  const priorMean = prior.reduce((sum, t) => sum + t.temp, 0) / prior.length
+  const diff = last - priorMean
+
+  let trend: TempTrend['trend']
+  if (diff > 0.1) trend = 'rising'
+  else if (diff < -0.1) trend = 'falling'
+  else trend = 'stable'
+
+  // Estimate days until thermal shift: need 3 consecutive days above threshold.
+  // Count how many trailing days are already elevated above priorMean + 0.2
+  let daysUntilThermalShift: number | null = null
+  if (trend === 'rising') {
+    const threshold = priorMean + 0.2
+    let elevatedCount = 0
+    for (let i = recent.length - 1; i >= 0; i--) {
+      if (recent[i].temp >= threshold) elevatedCount++
+      else break
+    }
+    daysUntilThermalShift = Math.max(0, 3 - elevatedCount)
+  }
+
+  return { hasData: true, lastTemperature, trend, daysUntilThermalShift }
+}
+
 /**
  * Calculates the fertile window using the symptothermal method.
  *
