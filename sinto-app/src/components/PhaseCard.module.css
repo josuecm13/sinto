@@ -1,0 +1,73 @@
+.card {
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
+}
+
+.header {
+  margin-bottom: 1rem;
+}
+
+.phaseInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.phaseName {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.cycleDay {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contentTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.contentBody {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+@media (min-width: 1024px) {
+  .card {
+    padding: 1.5rem;
+  }
+
+  .phaseName {
+    font-size: 1.2rem;
+  }
+
+  .contentTitle {
+    font-size: 1rem;
+  }
+
+  .contentBody {
+    font-size: 0.95rem;
+  }
+}
