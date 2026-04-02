@@ -16,6 +16,7 @@ import { cycleCommand } from './commands/cycle'
 import { logCommand } from './commands/log'
 import { phaseCommand } from './commands/phase'
 import { predictCommand } from './commands/predict'
+import { chartCommand } from './commands/chart'
 import { runApp } from './tui/app'
 
 function printBanner() {
@@ -82,6 +83,7 @@ program.addCommand(cycleCommand)
 program.addCommand(logCommand)
 program.addCommand(phaseCommand)
 program.addCommand(predictCommand)
+program.addCommand(chartCommand)
 
 const args = process.argv.slice(2)
 const isHelp = args.length === 0 || args[0] === '--help' || args[0] === '-h'

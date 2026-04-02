@@ -16,6 +16,7 @@ import { cycleFlow } from './flows/cycle-flow'
 import { phaseFlow } from './flows/phase-flow'
 import { predictFlow } from './flows/predict-flow'
 import { calendarFlow } from './flows/calendar-flow'
+import { chartFlow } from './flows/chart-flow'
 
 interface UserProfile {
   name: string
@@ -89,6 +90,7 @@ export async function runApp() {
         ...(hasCycle ? [
           { value: 'log', label: `${pc.cyan('📝')} Registrar síntomas de hoy` },
           { value: 'calendar', label: `${pc.cyan('📅')} Ver calendario del ciclo` },
+          { value: 'chart', label: `${pc.cyan('📊')} Gráfica de temperatura` },
           { value: 'phase', label: `${pc.cyan('🌿')} Guía de fase actual` },
           { value: 'predict', label: `${pc.cyan('🔮')} Predicción de fertilidad` },
         ] : []),
@@ -116,6 +118,7 @@ export async function runApp() {
 
     if (choice === 'log') await logFlow()
     if (choice === 'calendar') await calendarFlow()
+    if (choice === 'chart') await chartFlow()
     if (choice === 'phase') await phaseFlow()
     if (choice === 'predict') await predictFlow()
     if (choice === 'cycle') await cycleFlow()
