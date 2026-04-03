@@ -27,8 +27,8 @@
 
 ## 3. Sinto-API Integration Tests
 
-- [ ] 3.1 Create `sinto-api/src/__tests__/e2e/` directory for integration tests
-- [ ] 3.2 Create `sinto-api/src/__tests__/e2e/auth.e2e.test.ts` with register, login, refresh, logout endpoint tests
+- [x] 3.1 Create `sinto-api/src/__tests__/e2e/` directory for integration tests
+- [x] 3.2 Create `sinto-api/src/__tests__/e2e/auth.e2e.test.ts` with register, login, refresh, logout endpoint tests
 - [ ] 3.3 Create `sinto-api/src/__tests__/e2e/cycles.e2e.test.ts` with full CRUD endpoint tests for cycles
 - [ ] 3.4 Create `sinto-api/src/__tests__/e2e/logs.e2e.test.ts` with log creation and retrieval tests (menstrual and fertility logs)
 - [ ] 3.5 Create `sinto-api/src/__tests__/e2e/prediction.e2e.test.ts` with fertile window endpoint tests
