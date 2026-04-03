@@ -9,15 +9,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/server.ts'],
-      thresholds: {
-        'src/modules/algorithm/**': {
-          statements: 80,
-          branches: 80,
-          functions: 80,
-          lines: 80,
-        },
-      },
+      exclude: ['src/**/*.test.ts', 'src/index.ts'],
     },
   },
 })

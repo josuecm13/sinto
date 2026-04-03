@@ -175,4 +175,64 @@ describe('calculateDailyProbabilities', () => {
     expect(twoDaysAfterProb?.probability).toBe(0.01)
     expect(threeDaysAfterProb?.probability).toBe(0.01)
   })
+
+  it('should assign 0.01 probability when no ovulation estimate', () => {
+    const days: DayData[] = [
+      { date: new Date('2024-01-05'), temperature: 36.5, mucusQuality: null },
+      { date: new Date('2024-01-10'), temperature: 36.5, mucusQuality: null },
+    ]
+    const cycleStartDate = new Date('2024-01-01')
+    const fertileWindow: FertileWindow = {
+      fertileStart: null,
+      fertileEnd: null,
+      ovulationEstimate: null,
+      peakMucusDay: null,
+      bbtRiseDay: null,
+    }
+    const result = calculateDailyProbabilities(days, cycleStartDate, fertileWindow)
+    expect(result.every((p) => p.probability === 0.01)).toBe(true)
+    expect(result.every((p) => p.isFertile === false)).toBe(true)
+  })
+
+  it('should cover full probability curve (all days -5 to +1)', () => {
+    const ovulationDate = new Date('2024-01-10')
+    const days: DayData[] = []
+    for (let i = 5; i <= 15; i++) {
+      days.push({
+        date: new Date(`2024-01-${String(i).padStart(2, '0')}`),
+        temperature: 36.5,
+        mucusQuality: null,
+      })
+    }
+    const cycleStartDate = new Date('2024-01-01')
+    const fertileWindow: FertileWindow = {
+      fertileStart: new Date('2024-01-05'),
+      fertileEnd: new Date('2024-01-13'),
+      ovulationEstimate: ovulationDate,
+      peakMucusDay: null,
+      bbtRiseDay: null,
+    }
+    const result = calculateDailyProbabilities(days, cycleStartDate, fertileWindow)
+    const probByDate: Record<string, number> = {}
+    for (const r of result) {
+      probByDate[r.date.toISOString().split('T')[0]] = r.probability
+    }
+
+    // -5 days: Jan 5
+    expect(probByDate['2024-01-05']).toBe(0.05)
+    // -4 days: Jan 6
+    expect(probByDate['2024-01-06']).toBe(0.10)
+    // -3 days: Jan 7
+    expect(probByDate['2024-01-07']).toBe(0.15)
+    // -2 days: Jan 8
+    expect(probByDate['2024-01-08']).toBe(0.25)
+    // -1 day: Jan 9
+    expect(probByDate['2024-01-09']).toBe(0.30)
+    // Ovulation: Jan 10
+    expect(probByDate['2024-01-10']).toBe(0.25)
+    // +1 day: Jan 11
+    expect(probByDate['2024-01-11']).toBe(0.10)
+    // +2 days: Jan 12
+    expect(probByDate['2024-01-12']).toBe(0.01)
+  })
 })
