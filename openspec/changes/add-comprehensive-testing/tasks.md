@@ -53,11 +53,11 @@
 - [ ] 4.11 Create `sinto-cli/src/__tests__/tui/calendar.test.ts` with TUI calendar display test
 - [ ] 4.12 Create `sinto-cli/src/__tests__/tui/predict-flow.test.ts` with TUI prediction display test
 - [x] 4.13 Create Vitest configuration and npm script `test:cli`
-- [ ] 4.14 Run all CLI tests and verify integration with mocked API
+- [x] 4.14 Run all CLI tests and verify integration with mocked API
 
 ## 5. Sinto-App E2E Tests
 
-- [ ] 5.1 Install Playwright and dependencies in sinto-app
+- [x] 5.1 Install Playwright and dependencies in sinto-app
 - [x] 5.2 Create `sinto-app/e2e/` directory with Playwright config
 - [ ] 5.3 Create `sinto-app/e2e/fixtures/` for test data setup and teardown helpers
 - [x] 5.4 Create `sinto-app/e2e/auth.spec.ts` with registration and login flow tests
