@@ -2,7 +2,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at top left, rgba(143, 29, 34, 0.22), transparent 26%),
+    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
 }
 
 .header {
@@ -10,8 +12,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(11, 5, 6, 0.82);
+  border-bottom: 1px solid rgba(201, 164, 75, 0.12);
+  backdrop-filter: blur(16px);
 }
 
 .backLink {
@@ -36,17 +39,18 @@
   display: flex;
   flex-direction: column;
   padding: 2rem 1rem;
-  max-width: 600px;
+  max-width: 720px;
   width: 100%;
   margin: 0 auto;
 }
 
 .section {
-  background: var(--color-surface);
-  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(35, 18, 20, 0.96), rgba(24, 11, 13, 0.98));
+  border-radius: 20px;
   padding: 2rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  box-shadow: var(--shadow-panel);
   margin-bottom: 1.5rem;
+  border: 1px solid var(--color-border);
 }
 
 .sectionTitle {
@@ -62,7 +66,7 @@
   height: 64px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-accent-red-strong), var(--color-accent-red));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,7 +111,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
-  background: var(--color-bg);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--color-text);
   transition: border-color 0.15s;
   outline: none;
@@ -115,7 +119,7 @@
 }
 
 .input:focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent-gold);
 }
 
 .input:disabled {
@@ -144,8 +148,8 @@
 .saveBtn {
   margin-top: 0.5rem;
   padding: 0.7rem 1.4rem;
-  background: var(--color-primary);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-accent-red-strong), var(--color-accent-red));
+  color: var(--color-text);
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -166,7 +170,7 @@
 /* Field-level error */
 .fieldError {
   font-size: 0.82rem;
-  color: #b91c1c;
+  color: var(--color-danger-text);
   margin-top: 0.2rem;
 }
 
@@ -174,8 +178,8 @@
 .errorMsg {
   margin-top: 0.75rem;
   padding: 0.6rem 0.9rem;
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
   border-radius: 8px;
   font-size: 0.875rem;
 }
@@ -184,6 +188,6 @@
 .successMsg {
   margin-top: 0.6rem;
   font-size: 0.875rem;
-  color: #16a34a;
+  color: var(--color-success-text);
   font-weight: 500;
 }

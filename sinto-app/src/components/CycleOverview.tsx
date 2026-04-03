@@ -45,7 +45,9 @@ export default function CycleOverview({
   const progressPercent = (cycleDay / avgCycleLength) * 100;
   const emoji = phaseEmojis[cycleDay] || '📊';
   const phaseName = phaseNames[cycleDay] || 'Unknown';
-  const fertilityColor = isCurrentlyFertile ? '#ef4444' : '#6b7280';
+  const badgeClassName = isCurrentlyFertile
+    ? `${styles.badge} ${styles.badgeActive}`
+    : `${styles.badge} ${styles.badgeMuted}`;
 
   return (
     <div className={styles.card}>
@@ -57,12 +59,7 @@ export default function CycleOverview({
             <p className={styles.phase}>{phaseName}</p>
           </div>
         </div>
-        <div
-          className={styles.badge}
-          style={{
-            backgroundColor: fertilityColor,
-          }}
-        >
+        <div className={badgeClassName}>
           {isCurrentlyFertile ? '🔥 Fertile' : '◯ Not Fertile'}
         </div>
       </div>

@@ -1,8 +1,8 @@
 .card {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, rgba(35, 18, 20, 0.96), rgba(24, 11, 13, 0.98));
   border-radius: 12px;
   padding: 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-card);
   border: 1px solid var(--color-border);
 }
 
@@ -33,7 +33,7 @@
 }
 
 .indicator.fertile {
-  background: var(--color-primary);
+  background: var(--color-accent-red-strong);
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -63,8 +63,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: var(--color-bg);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
+  border: 1px solid rgba(201, 164, 75, 0.08);
 }
 
 .label {
@@ -78,7 +79,7 @@
 .value {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-accent-gold-soft);
 }
 
 .divider {
