@@ -112,9 +112,10 @@
 
 ## 10. Validation and Deployment
 
-- [ ] 10.1 Run full test suite locally (all 3 projects) and verify >80% coverage for API
-- [ ] 10.2 Create a PR with all test code and run through full CI/CD workflow
-- [ ] 10.3 Verify Codecov reports show coverage trends and PR comments
-- [ ] 10.4 Document any CI/CD issues and create follow-up tasks if needed
-- [ ] 10.5 Merge testing infrastructure to main branch
+- [x] 10.1 Run full test suite locally (all 3 projects) and verify >80% coverage for API
+- [x] 10.2 Create a PR with all test code and run through full CI/CD workflow (branch test/all-tests-infra pushed to https://github.com/josuecm13/sinto — open PR from there)
+- [ ] 10.3 Verify Codecov reports show coverage trends and PR comments (needs CODECOV_TOKEN secret in repo settings)
+- [x] 10.4 Document any CI/CD issues and create follow-up tasks if needed (see docs/testing/admin-checklist.md)
+- [ ] 10.5 Merge testing infrastructure to main branch (requires PR approval on GitHub)
 - [ ] 10.6 Update team on testing requirements for future PRs
+
