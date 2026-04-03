@@ -33,7 +33,7 @@ describe('CLI integration (mocked API)', () => {
       .post('/auth/login', { email: 'test@example.com', password: 'password' })
       .reply(200, AUTH_RESPONSES.login)
 
-    await loginCommand.parseAsync(['node', 'login', '--email', 'test@example.com', '--password', 'password'], { from: 'user' })
+    await loginCommand.parseAsync(['login', '--email', 'test@example.com', '--password', 'password'], { from: 'user' })
 
     expect(saveSpy).toHaveBeenCalled()
 
@@ -45,7 +45,7 @@ describe('CLI integration (mocked API)', () => {
 
     nock('http://localhost:3000').get('/users/me').reply(200, ME_RESPONSE)
 
-    await meCommand.parseAsync(['node', 'me'], { from: 'user' })
+    await meCommand.parseAsync(['me'], { from: 'user' })
   })
 
   it('cycle list prints cycles', async () => {
@@ -53,7 +53,7 @@ describe('CLI integration (mocked API)', () => {
 
     nock('http://localhost:3000').get('/cycles').reply(200, CYCLE_RESPONSES.list)
 
-    await cycleCommand.parseAsync(['node', 'cycle', 'list'], { from: 'user' })
+    await cycleCommand.parseAsync(['cycle', 'list'], { from: 'user' })
   })
 
   it('log add (non-interactive) posts a log', async () => {
@@ -63,7 +63,7 @@ describe('CLI integration (mocked API)', () => {
       .post('/cycles/cycle-2/logs')
       .reply(201, LOG_RESPONSES.created)
 
-    await logCommand.parseAsync(['node', 'log', 'add', '--date', '2024-02-05', '--temperature', '36.5'], { from: 'user' })
+    await logCommand.parseAsync(['log', 'add', '--date', '2024-02-05', '--temperature', '36.5'], { from: 'user' })
   })
 
   it('predict command fetches prediction', async () => {
@@ -71,7 +71,7 @@ describe('CLI integration (mocked API)', () => {
 
     nock('http://localhost:3000').get('/predict').reply(200, PREDICTION_RESPONSE)
 
-    await predictCommand.parseAsync(['node', 'predict'], { from: 'user' })
+    await predictCommand.parseAsync(['predict'], { from: 'user' })
   })
 
   it('phase command shows content and current phase', async () => {
@@ -80,6 +80,6 @@ describe('CLI integration (mocked API)', () => {
     nock('http://localhost:3000').get('/phase').reply(200, PHASE_RESPONSES.current)
     nock('http://localhost:3000').get('/phase/content').reply(200, PHASE_RESPONSES.content)
 
-    await phaseCommand.parseAsync(['node', 'phase'], { from: 'user' })
+    await phaseCommand.parseAsync(['phase'], { from: 'user' })
   })
 })
