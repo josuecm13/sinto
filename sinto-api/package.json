@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:api:integration": "vitest run src/__tests__/e2e",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src"
   },

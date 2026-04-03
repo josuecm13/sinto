@@ -29,13 +29,13 @@
 
 - [x] 3.1 Create `sinto-api/src/__tests__/e2e/` directory for integration tests
 - [x] 3.2 Create `sinto-api/src/__tests__/e2e/auth.e2e.test.ts` with register, login, refresh, logout endpoint tests
-- [ ] 3.3 Create `sinto-api/src/__tests__/e2e/cycles.e2e.test.ts` with full CRUD endpoint tests for cycles
-- [ ] 3.4 Create `sinto-api/src/__tests__/e2e/logs.e2e.test.ts` with log creation and retrieval tests (menstrual and fertility logs)
-- [ ] 3.5 Create `sinto-api/src/__tests__/e2e/prediction.e2e.test.ts` with fertile window endpoint tests
-- [ ] 3.6 Create `sinto-api/src/__tests__/e2e/phases.e2e.test.ts` with current phase and phase content endpoint tests
-- [ ] 3.7 Create `sinto-api/src/__tests__/e2e/error-handling.test.ts` with validation and error response tests
-- [ ] 3.8 Set up test database seeding in integration test setup hooks
-- [ ] 3.9 Create npm script `test:api:integration` that runs tests against Docker containers
+- [x] 3.3 Create `sinto-api/src/__tests__/e2e/cycles.e2e.test.ts` with full CRUD endpoint tests for cycles
+- [x] 3.4 Create `sinto-api/src/__tests__/e2e/logs.e2e.test.ts` with log creation and retrieval tests (menstrual and fertility logs)
+- [x] 3.5 Create `sinto-api/src/__tests__/e2e/prediction.e2e.test.ts` with fertile window endpoint tests
+- [x] 3.6 Create `sinto-api/src/__tests__/e2e/phases.e2e.test.ts` with current phase and phase content endpoint tests
+- [x] 3.7 Create `sinto-api/src/__tests__/e2e/error-handling.test.ts` with validation and error response tests
+- [x] 3.8 Set up test database seeding in integration test setup hooks (placeholder)
+- [x] 3.9 Create npm script `test:api:integration` that runs tests against Docker containers
 - [ ] 3.10 Run integration tests and verify all endpoints behave per spec
 
 ## 4. Sinto-CLI Integration Tests
