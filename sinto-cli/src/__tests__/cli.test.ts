@@ -69,7 +69,7 @@ describe('CLI integration (mocked API)', () => {
   it('predict command fetches prediction', async () => {
     vi.spyOn(credsModule, 'requireAuth').mockImplementation(() => ({ email: 'test@example.com', accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', activeCycleId: 'cycle-2' } as any))
 
-    nock('http://localhost:3000').get('/predict').reply(200, PREDICTION_RESPONSE)
+    nock('http://localhost:3000').get('/cycles/cycle-2/prediction').reply(200, PREDICTION_RESPONSE)
 
     await predictCommand.parseAsync(['predict'], { from: 'user' })
   })
@@ -77,8 +77,8 @@ describe('CLI integration (mocked API)', () => {
   it('phase command shows content and current phase', async () => {
     vi.spyOn(credsModule, 'requireAuth').mockImplementation(() => ({ email: 'test@example.com', accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', activeCycleId: 'cycle-2' } as any))
 
-    nock('http://localhost:3000').get('/phase').reply(200, PHASE_RESPONSES.current)
-    nock('http://localhost:3000').get('/phase/content').reply(200, PHASE_RESPONSES.content)
+    nock('http://localhost:3000').get('/phases/current').query({ cycleId: 'cycle-2' }).reply(200, PHASE_RESPONSES.current)
+    nock('http://localhost:3000').get('/phases/content').reply(200, PHASE_RESPONSES.content)
 
     await phaseCommand.parseAsync([], { from: 'user' })
   })

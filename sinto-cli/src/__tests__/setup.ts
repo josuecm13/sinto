@@ -21,4 +21,4 @@ export function teardownNock(): void {
 }
 
 // Dummy describe to avoid "No test suite found" when Vitest treats this as a test file
-describe('test setup', () => {})
+describe('test setup', () => { it('noop', () => {}) })
