@@ -79,18 +79,21 @@ export const LOG_RESPONSES = {
 }
 
 export const PREDICTION_RESPONSE = {
-  cycleId: 'cycle-2',
-  cycleDay: 10,
-  estimatedCycleDuration: 28,
-  currentPhase: { name: 'follicular', estimatedStartDay: 6, estimatedEndDay: 13, dayInPhase: 5 },
-  expectedOvulation: { estimatedDate: '2024-02-14', daysUntil: 4 },
-  fertilityWindow: {
-    estimatedStartDate: '2024-02-09',
-    estimatedEndDate: '2024-02-17',
-    daysRemaining: 7,
-    isCurrentlyFertile: true,
+  fertileWindow: {
+    ovulationEstimate: '2024-02-14',
+    fertileStart: '2024-02-09',
+    fertileEnd: '2024-02-17',
   },
-  confidenceLevel: 'medium',
+  summary: {
+    isCurrentlyFertile: true,
+    currentDayProbability: 0.42,
+  },
+  dailyProbability: Array.from({ length: 14 }).map((_, i) => ({
+    date: `2024-02-${(9 + i).toString().padStart(2, '0')}`,
+    cycleDay: 9 + i,
+    isFertile: i >= 0 && i <= 8,
+    probability: Math.max(0, Math.min(1, 0.1 + i * 0.07)),
+  })),
 }
 
 export const PHASE_RESPONSES = {
