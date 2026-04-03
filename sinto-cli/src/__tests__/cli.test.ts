@@ -53,7 +53,7 @@ describe('CLI integration (mocked API)', () => {
 
     nock('http://localhost:3000').get('/cycles').reply(200, CYCLE_RESPONSES.list)
 
-    await cycleCommand.parseAsync(['cycle', 'list'], { from: 'user' })
+    await cycleCommand.parseAsync(['list'], { from: 'user' })
   })
 
   it('log add (non-interactive) posts a log', async () => {
@@ -63,7 +63,7 @@ describe('CLI integration (mocked API)', () => {
       .post('/cycles/cycle-2/logs')
       .reply(201, LOG_RESPONSES.created)
 
-    await logCommand.parseAsync(['log', 'add', '--date', '2024-02-05', '--temperature', '36.5'], { from: 'user' })
+    await logCommand.parseAsync(['add', '--date', '2024-02-05', '--temperature', '36.5'], { from: 'user' })
   })
 
   it('predict command fetches prediction', async () => {
@@ -80,6 +80,6 @@ describe('CLI integration (mocked API)', () => {
     nock('http://localhost:3000').get('/phase').reply(200, PHASE_RESPONSES.current)
     nock('http://localhost:3000').get('/phase/content').reply(200, PHASE_RESPONSES.content)
 
-    await phaseCommand.parseAsync(['phase'], { from: 'user' })
+    await phaseCommand.parseAsync([], { from: 'user' })
   })
 })

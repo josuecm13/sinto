@@ -1,4 +1,5 @@
 import nock from 'nock'
+import { describe } from 'vitest'
 
 // Use node-fetch so nock can intercept HTTP requests made by fetch
 // We avoid importing node-fetch at module evaluation time so tests can opt-in
@@ -18,3 +19,6 @@ export function teardownNock(): void {
   nock.cleanAll()
   nock.enableNetConnect()
 }
+
+// Dummy describe to avoid "No test suite found" when Vitest treats this as a test file
+describe('test setup', () => {})
