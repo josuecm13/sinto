@@ -1,0 +1,211 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.35rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(201, 164, 75, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(35, 18, 20, 0.98), rgba(24, 11, 13, 0.98));
+  box-shadow: var(--shadow-panel);
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-accent-gold-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  color: var(--color-text);
+}
+
+.description {
+  margin: 0.6rem 0 0;
+  max-width: 62ch;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.secondaryButton {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.secondaryButton:hover {
+  border-color: var(--color-accent-gold);
+  background: rgba(201, 164, 75, 0.1);
+  transform: translateY(-1px);
+}
+
+.editPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px dashed rgba(201, 164, 75, 0.45);
+  border-radius: 18px;
+  background: rgba(24, 11, 13, 0.78);
+}
+
+.editPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.editLabel {
+  margin: 0 0 0.3rem;
+  color: var(--color-accent-gold-soft);
+  font-weight: 600;
+}
+
+.editText {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.hiddenWidgets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.hiddenEmpty {
+  margin: 0;
+  color: var(--color-text-subtle);
+}
+
+.widgetChip {
+  min-height: 38px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: minmax(142px, auto);
+  gap: 1rem;
+}
+
+.widget {
+  position: relative;
+  min-width: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+}
+
+.widgetControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.7rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px dashed rgba(201, 164, 75, 0.35);
+  border-radius: 16px;
+  background: rgba(36, 18, 20, 0.88);
+}
+
+.widgetMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.widgetTitle {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.widgetSpan {
+  color: var(--color-text-subtle);
+  font-size: 0.85rem;
+}
+
+.widgetButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.controlButton {
+  min-height: 34px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.controlButton:hover {
+  border-color: var(--color-accent-red-strong);
+}
+
+.widgetBody {
+  height: 100%;
+}
+
+@media (max-width: 1179px) {
+  .grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 719px) {
+  .toolbar {
+    padding: 1.1rem;
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .widgetControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .widgetButtons {
+    justify-content: flex-start;
+  }
+}
