@@ -1,0 +1,50 @@
+#!/usr/bin/env sh
+
+# Minimal fast pre-commit hook: run affected tests and warn about missing tests/coverage
+# Configurable strict mode: set STRICT_COVERAGE=1 to fail commits when new source files lack tests
+
+STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACM)"
+[ -z "$STAGED_FILES" ] && exit 0
+
+# Run staged test files directly if any
+TEST_FILES=$(printf "%s" "$STAGED_FILES" | grep -E '\.(test|spec)\.(js|ts|jsx|tsx)$' || true)
+if [ -n "$TEST_FILES" ]; then
+  echo "Running affected test files:"
+  printf "%s\n" "$TEST_FILES"
+  npx vitest run $TEST_FILES || exit 1
+else
+  # Otherwise run tests for affected top-level packages (fast for small packages)
+  PACKAGES=$(printf "%s" "$STAGED_FILES" | awk -F/ '{print $1}' | sort -u)
+  for pkg in $PACKAGES; do
+    if [ -f "$pkg/package.json" ]; then
+      echo "Running tests in $pkg..."
+      (cd "$pkg" && npm run test --silent) || exit 1
+    fi
+  done
+fi
+
+# Warn (or fail if STRICT_COVERAGE=1) when new source files have no corresponding tests
+NEW_SRC=$(git diff --cached --name-only --diff-filter=A | grep -E '\.(js|ts|jsx|tsx)$' || true)
+if [ -n "$NEW_SRC" ]; then
+  MISSING_TESTS=""
+  for f in $NEW_SRC; do
+    # crude check: look for a nearby test file or a test file with same name
+    base_dir=$(dirname "$f")
+    base_name=$(basename "$f")
+    test1="$base_dir/__tests__/${base_name%.*}.test.${base_name##*.}"
+    test2="$base_dir/${base_name%.*}.test.${base_name##*.}"
+    if [ ! -f "$test1" ] && [ ! -f "$test2" ]; then
+      MISSING_TESTS="$MISSING_TESTS $f"
+    fi
+  done
+  if [ -n "$MISSING_TESTS" ]; then
+    echo "\nWarning: New source files without nearby tests were detected:$MISSING_TESTS"
+    echo "Add tests or set STRICT_COVERAGE=1 to make this commit fail if you want to enforce coverage."
+    if [ "$STRICT_COVERAGE" = "1" ]; then
+      echo "STRICT_COVERAGE=1 set -> failing commit due to missing tests/coverage"
+      exit 1
+    fi
+  fi
+fi
+
+exit 0
