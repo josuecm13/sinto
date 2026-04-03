@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest run",
+    "test:cli": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
@@ -20,6 +21,8 @@
     "@vitest/coverage-v8": "^4.1.2",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "nock": "^13.3.0",
+    "node-fetch": "^2.6.7"
   }
 }
